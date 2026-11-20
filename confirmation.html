@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order confirmed | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap">
+  <ol class="steps"><li class="done"><span>1</span>Cart</li><li class="done"><span>2</span>Checkout</li><li class="on"><span>3</span>Done</li></ol><div class="done" id="done"></div></main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("cart.html");
+let o = null;
+try { o = JSON.parse(localStorage.getItem("lastOrder") || "null"); } catch (e) {}
+const box = document.getElementById("done");
+
+if (!o){
+  box.innerHTML = '<div class="empty">No recent order found.<br><a class="btn" href="products.html">Browse products</a></div>';
+}else{
+  const c = o.customer;
+  box.innerHTML =
+    '<div class="tick">✓</div><h1>Thank you, ' + esc(c.name) + "!</h1>" +
+    '<p style="color:var(--muted)">Your order has been placed. A confirmation will be sent to ' + esc(c.email) + ".</p>" +
+    '<div class="panel"><div class="mini"><span>Order ID</span><span>' + esc(o.id) + "</span></div>" +
+    '<div class="mini"><span>Date</span><span>' + esc(o.date) + "</span></div>" +
+    '<div class="mini"><span>Payment</span><span>' + esc(o.payment) + "</span></div>" +
+    '<div class="mini"><span>Deliver to</span><span style="white-space:normal;text-align:right">' + esc(c.address) + ", " + esc(c.city) + " - " + esc(c.pin) + "</span></div>" +
+    '<hr style="border:0;border-top:1px solid var(--line);margin:12px 0">' +
+    o.items.map(i => '<div class="mini"><span>' + i.icon + " " + esc(i.name) + " × " + i.qty + "</span><span>" + money(i.price * i.qty) + "</span></div>").join("") +
+    '<div class="mini"><span>Delivery</span><span>' + (o.shipping ? money(o.shipping) : "FREE") + "</span></div>" +
+    '<div class="mini" style="font-size:1.1rem"><span><b>Total paid</b></span><span>' + money(o.total) + "</span></div></div>" +
+    '<a class="btn big" href="products.html">Continue shopping</a>';
+}
+</script>
+</body>
+</html>

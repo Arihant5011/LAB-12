@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap">
+  <h1>All products</h1>
+  <div class="tools" style="margin-top:16px">
+    <input type="search" id="q" placeholder="Search products..." aria-label="Search products">
+    <select id="sort" aria-label="Sort products">
+      <option value="">Sort: Featured</option>
+      <option value="plh">Price: Low to High</option>
+      <option value="phl">Price: High to Low</option>
+      <option value="rating">Top rated</option>
+    </select>
+  </div>
+  <div class="chips" id="chips"></div>
+  <p class="count" id="count"></p>
+  <div class="grid" id="grid"><div class="empty">Loading products...</div></div>
+</main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("products.html");
+let all = [], cat = new URLSearchParams(location.search).get("cat") || "All";
+
+function draw(){
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const sort = document.getElementById("sort").value;
+  let list = all.filter(p => (cat === "All" || p.category === cat) &&
+    (p.name + " " + p.category + " " + p.description).toLowerCase().includes(q));
+  if (sort === "plh") list.sort((a, b) => a.price - b.price);
+  if (sort === "phl") list.sort((a, b) => b.price - a.price);
+  if (sort === "rating") list.sort((a, b) => b.rating - a.rating);
+  document.getElementById("count").textContent = list.length + " product" + (list.length === 1 ? "" : "s");
+  document.getElementById("grid").innerHTML = list.length ? list.map(productCard).join("")
+    : '<div class="empty" style="grid-column:1/-1">No products match your search.</div>';
+  document.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c.dataset.cat === cat));
+}
+
+loadProducts().then(ps => {
+  all = ps;
+  const cats = ["All", ...new Set(ps.map(p => p.category))];
+  document.getElementById("chips").innerHTML = cats.map(c =>
+    '<button class="chip" data-cat="' + esc(c) + '">' + esc(c) + "</button>").join("");
+  draw();
+}).catch(() => showError(document.getElementById("grid")));
+
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return; cat = b.dataset.cat; draw();
+});
+document.getElementById("q").addEventListener("input", draw);
+document.getElementById("sort").addEventListener("change", draw);
+</script>
+</body>
+</html>

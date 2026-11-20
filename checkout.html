@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap">
+  <ol class="steps"><li class="done"><span>1</span>Cart</li><li class="on"><span>2</span>Checkout</li><li class=""><span>3</span>Done</li></ol>
+  <h1>Checkout</h1>
+  <div class="two" style="margin-top:18px">
+    <form class="panel" id="form" novalidate>
+      <div class="fgrid">
+        <div class="field full"><label for="name">Full name</label><input id="name" autocomplete="name"><span class="msg">Enter your name (letters only).</span></div>
+        <div class="field"><label for="email">Email</label><input id="email" type="email" autocomplete="email"><span class="msg">Enter a valid email.</span></div>
+        <div class="field"><label for="phone">Mobile number</label><input id="phone" inputmode="numeric" maxlength="10" autocomplete="tel"><span class="msg">Enter a 10-digit number starting with 6-9.</span></div>
+        <div class="field full"><label for="address">Delivery address</label><textarea id="address" rows="2" autocomplete="street-address"></textarea><span class="msg">Enter your address.</span></div>
+        <div class="field"><label for="city">City</label><input id="city" autocomplete="address-level2"><span class="msg">Enter your city.</span></div>
+        <div class="field"><label for="pin">PIN code</label><input id="pin" inputmode="numeric" maxlength="6" autocomplete="postal-code"><span class="msg">Enter a 6-digit PIN code.</span></div>
+        <fieldset class="field full" id="payField"><legend>Payment method</legend>
+          <div class="pays">
+            <label><input type="radio" name="pay" value="Cash on Delivery"> Cash on Delivery</label>
+            <label><input type="radio" name="pay" value="UPI"> UPI</label>
+            <label><input type="radio" name="pay" value="Card"> Card</label>
+          </div>
+          <span class="msg">Choose a payment method.</span>
+        </fieldset>
+      </div>
+      <button class="btn big" type="submit" style="margin-top:20px">Place order</button>
+    </form>
+    <aside class="panel sum" id="summary"></aside>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("cart.html");
+let lines = [], t;
+const form = document.getElementById("form");
+
+loadProducts().then(ps => {
+  lines = cartLines(ps);
+  if (!lines.length){ location.href = "cart.html"; return; }
+  t = totals(lines);
+  document.getElementById("summary").innerHTML = "<h3>Your order</h3>" +
+    lines.map(l => '<div class="mini"><span>' + esc(l.p.name) + " × " + l.qty + "</span><span>" + money(l.p.price * l.qty) + "</span></div>").join("") +
+    '<div class="line" style="margin-top:8px"><span>Delivery</span><span>' + (t.shipping ? money(t.shipping) : '<span class="free">FREE</span>') + "</span></div>" +
+    '<div class="line total"><span>Total</span><span>' + money(t.total) + "</span></div>";
+}).catch(() => showError(document.getElementById("summary")));
+
+const val = id => document.getElementById(id).value.trim();
+const rules = {
+  name:    () => /^[A-Za-z][A-Za-z .'-]{1,}$/.test(val("name")),
+  email:   () => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val("email")),
+  phone:   () => /^[6-9]\d{9}$/.test(val("phone")),
+  address: () => val("address").length >= 6,
+  city:    () => val("city").length >= 2,
+  pin:     () => /^\d{6}$/.test(val("pin")),
+  pay:     () => !!form.querySelector('input[name="pay"]:checked')
+};
+function check(k){
+  const ok = rules[k]();
+  (k === "pay" ? document.getElementById("payField") : document.getElementById(k).closest(".field")).classList.toggle("invalid", !ok);
+  return ok;
+}
+Object.keys(rules).forEach(k => {
+  if (k === "pay") form.querySelectorAll('input[name="pay"]').forEach(r => r.addEventListener("change", () => check("pay")));
+  else document.getElementById(k).addEventListener("blur", () => check(k));
+});
+["phone", "pin"].forEach(k => document.getElementById(k).addEventListener("input", e => e.target.value = e.target.value.replace(/\D/g, "")));
+
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  if (!lines.length) return;
+  if (Object.keys(rules).map(check).includes(false)){
+    const bad = form.querySelector(".invalid input, .invalid textarea"); if (bad) bad.focus(); return;
+  }
+  const order = {
+    id: "ORD" + Date.now().toString().slice(-8),
+    date: new Date().toLocaleString("en-IN"),
+    customer: { name: val("name"), email: val("email"), phone: val("phone"), address: val("address"), city: val("city"), pin: val("pin") },
+    payment: form.querySelector('input[name="pay"]:checked').value,
+    items: lines.map(l => ({ name: l.p.name, icon: l.p.icon, qty: l.qty, price: l.p.price })),
+    subtotal: t.subtotal, shipping: t.shipping, total: t.total
+  };
+  try { localStorage.setItem("lastOrder", JSON.stringify(order)); } catch (err) {}
+  clearCart();
+  location.href = "confirmation.html";
+});
+</script>
+</body>
+</html>

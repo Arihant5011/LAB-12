@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<section class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow">✨ New season, new finds</span>
+    <h1>Everything you need, <em>delivered</em> to your door.</h1>
+    <p>Browse electronics, books, fashion and home essentials at friendly prices, with free delivery above ₹999.</p>
+    <div class="acts"><a class="btn light big" href="products.html">Shop now</a><a class="btn outline big" href="products.html?cat=Books">Browse books</a></div>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <div class="float-card fc1"><span class="emo">🎧</span><div>Wireless Headphones<small>Electronics</small></div></div>
+    <div class="float-card fc2"><span class="emo">⌚</span><div>Smart Watch<small>Electronics</small></div></div>
+    <div class="float-card fc3"><span class="emo">👟</span><div>Running Shoes<small>Fashion</small></div></div>
+  </div>
+</div></section>
+<main class="wrap">
+  <div class="perks">
+    <div><span class="pi">🚚</span><div><b>Free delivery</b><small>on orders above ₹999</small></div></div>
+    <div><span class="pi">↩️</span><div><b>Easy returns</b><small>7-day return policy</small></div></div>
+    <div><span class="pi">🔒</span><div><b>Secure checkout</b><small>COD, UPI or card</small></div></div>
+  </div>
+  <h2>Shop by category</h2>
+  <div class="cats" id="cats"></div>
+  <h2>Top rated products</h2>
+  <div class="grid" id="featured"></div>
+  <div class="cta"><div><h3>Can’t decide? See the whole collection.</h3><p>Search, filter by category and sort by price or rating.</p></div><a class="btn light big" href="products.html">Browse all products</a></div>
+</main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("index.html");
+const catIcons = {Electronics:"🔌", Books:"📚", Fashion:"👗", Home:"🏠"};
+loadProducts().then(ps => {
+  const cats = [...new Set(ps.map(p => p.category))];
+  document.getElementById("cats").innerHTML = cats.map(c =>
+    '<a class="cat-tile ' + tint(c) + '" href="products.html?cat=' + encodeURIComponent(c) + '"><span>' + (catIcons[c] || "🛒") + "</span>" + esc(c) + "</a>").join("");
+  const top = ps.slice().sort((a, b) => b.rating - a.rating).slice(0, 4);
+  document.getElementById("featured").innerHTML = top.map(productCard).join("");
+}).catch(() => showError(document.getElementById("featured")));
+</script>
+</body>
+</html>

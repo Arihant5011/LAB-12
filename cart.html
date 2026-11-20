@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cart | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap">
+  <ol class="steps"><li class="on"><span>1</span>Cart</li><li class=""><span>2</span>Checkout</li><li class=""><span>3</span>Done</li></ol>
+  <h1>Your cart</h1>
+  <div id="cart" style="margin-top:18px"><div class="empty">Loading...</div></div>
+</main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("cart.html");
+let products = [];
+
+function draw(){
+  const lines = cartLines(products);
+  const box = document.getElementById("cart");
+  if (!lines.length){
+    box.innerHTML = '<div class="empty">Your cart is empty.<br><a class="btn" href="products.html">Start shopping</a></div>';
+    return;
+  }
+  const t = totals(lines);
+  const missing = FREE_SHIPPING_ABOVE - t.subtotal;
+  box.innerHTML = '<div class="two"><div class="panel">' +
+    lines.map(l =>
+      '<div class="crow"><div class="ic">' + l.p.icon + "</div>" +
+      '<div class="nm"><a href="product.html?id=' + l.p.id + '">' + esc(l.p.name) + "</a><small>" + money(l.p.price) + " each</small></div>" +
+      '<div class="qty"><button data-act="dec" data-id="' + l.p.id + '" aria-label="Decrease">−</button><span>' + l.qty + '</span><button data-act="inc" data-id="' + l.p.id + '" aria-label="Increase">+</button></div>' +
+      '<div class="amt">' + money(l.p.price * l.qty) + "</div>" +
+      '<button class="rm" data-act="rm" data-id="' + l.p.id + '">Remove</button></div>').join("") +
+    '</div><aside class="panel sum"><h3>Order summary</h3>' +
+    '<div class="line"><span>Subtotal</span><span>' + money(t.subtotal) + "</span></div>" +
+    '<div class="line"><span>Delivery</span><span>' + (t.shipping ? money(t.shipping) : '<span class="free">FREE</span>') + "</span></div>" +
+    (missing > 0 ? '<div class="line" style="font-size:.85rem">Add ' + money(missing) + " more for free delivery</div>" : "") +
+    '<div class="line total"><span>Total</span><span>' + money(t.total) + "</span></div>" +
+    '<a class="btn big" href="checkout.html">Proceed to checkout</a>' +
+    '<button class="btn ghost" id="clear" style="margin-top:10px">Clear cart</button></aside></div>';
+}
+
+document.getElementById("cart").addEventListener("click", e => {
+  if (e.target.id === "clear"){ clearCart(); draw(); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const id = b.dataset.id, cur = getCart()[id] || 0;
+  const p = products.find(x => x.id === id);
+  if (b.dataset.act === "inc") setQty(id, Math.min(cur + 1, p.stock));
+  if (b.dataset.act === "dec") setQty(id, cur - 1);
+  if (b.dataset.act === "rm")  setQty(id, 0);
+  draw();
+});
+
+loadProducts().then(ps => { products = ps; draw(); }).catch(() => showError(document.getElementById("cart")));
+</script>
+</body>
+</html>

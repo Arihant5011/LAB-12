@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product details | ShopEasy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="site-header"></div>
+<main class="wrap" id="main"><div class="empty">Loading...</div></main>
+<div id="site-footer"></div>
+<script src="products-xml.js"></script>
+<script src="app.js"></script>
+<script>
+renderLayout("products.html");
+const id = new URLSearchParams(location.search).get("id");
+
+loadProducts().then(ps => {
+  const p = ps.find(x => x.id === id);
+  const main = document.getElementById("main");
+  if (!p){ main.innerHTML = '<div class="empty">Product not found.<br><a class="btn" href="products.html">Back to products</a></div>'; return; }
+  document.title = p.name + " | ShopEasy";
+
+  const off = p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+  const out = p.stock < 1;
+  main.innerHTML =
+    '<div class="crumbs"><a href="index.html">Home</a> / <a href="products.html?cat=' + encodeURIComponent(p.category) + '">' + esc(p.category) + "</a> / " + esc(p.name) + "</div>" +
+    '<div class="detail"><div class="pimg ' + tint(p.category) + '"><span class="emo">' + p.icon + "</span></div><div>" +
+      '<span class="cat">' + esc(p.category) + "</span><h1>" + esc(p.name) + "</h1>" +
+      '<div class="stars">' + stars(p.rating) + " <small>" + p.rating + " / 5</small></div>" +
+      '<div class="price">' + money(p.price) + (off ? "<s>" + money(p.mrp) + "</s> <span class='free'>" + off + "% off</span>" : "") + "</div>" +
+      "<p>" + esc(p.description) + "</p>" +
+      '<div class="stock ' + (out ? "out" : "in") + '">' + (out ? "Out of stock" : p.stock <= 10 ? "Only " + p.stock + " left" : "In stock") + "</div>" +
+      (out ? "" : '<div class="buy"><div class="qty"><button id="minus" aria-label="Decrease">−</button><span id="q">1</span><button id="plus" aria-label="Increase">+</button></div>' +
+        '<button class="btn" id="add">Add to cart</button><button class="btn ghost" id="buy">Buy now</button></div>') +
+    "</div></div>" +
+    '<h2>You may also like</h2><div class="grid" id="related"></div>';
+
+  document.getElementById("related").innerHTML =
+    ps.filter(x => x.category === p.category && x.id !== p.id).slice(0, 4).map(productCard).join("");
+
+  if (!out){
+    let qty = 1;
+    const show = () => document.getElementById("q").textContent = qty;
+    document.getElementById("minus").onclick = () => { if (qty > 1){ qty--; show(); } };
+    document.getElementById("plus").onclick  = () => { if (qty < p.stock){ qty++; show(); } };
+    document.getElementById("add").onclick   = () => addToCart(p.id, qty);
+    document.getElementById("buy").onclick   = () => { addToCart(p.id, qty); location.href = "cart.html"; };
+  }
+}).catch(() => showError(document.getElementById("main")));
+</script>
+</body>
+</html>
